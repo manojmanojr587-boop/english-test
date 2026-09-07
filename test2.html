@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Examination & Assessment Portal</title>
+  <title>Examination Portal</title>
   <style>
     :root {
       --primary: #1e3a8a;
@@ -30,15 +30,15 @@
     .password-field input { margin: 8px 0 0 0; padding-right: 46px; }
     .toggle-password { position: absolute; right: 12px; top: 50%; transform: translateY(-10%); background: none; border: none; cursor: pointer; font-size: 1.2rem; color: #64748b; }
     .timer-badge { font-size: 1.2rem; font-weight: bold; color: var(--danger); background: #fee2e2; padding: 8px 16px; border-radius: 6px; }
-    .student-badge { font-size: 1rem; color: var(--primary); font-weight: 600; background: #e0f2fe; padding: 6px 14px; border-radius: 6px; }
+    .student-badge { font-size: 1rem; color: var(--primary); font-weight: 600; background: #e0f2fe; padding: 6px 14px; border-radius: 6px; margin-top: 5px; display: inline-block; }
     .question-block { border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 15px; }
     .option-label { display: flex; align-items: center; margin-bottom: 8px; cursor: pointer; }
     .option-label input { width: auto; margin-right: 10px; margin-top: 0; }
     .category-chip { display: inline-flex; align-items: center; background: #e0f2fe; color: #0369a1; padding: 6px 12px; border-radius: 20px; margin: 4px; font-size: 0.9rem; }
-    .category-chip button { background: none; border: none; margin-left: 8px; color: var(--danger); font-weight: bold; cursor: pointer; font-size: 1rem; }
-    .toggle-btn { padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; margin-left: 8px; font-weight: bold; cursor: pointer; border: none; color: white; }
-    .toggle-on { background-color: var(--success); }
-    .toggle-off { background-color: var(--danger); }
+    .category-chip button { background: none; border: none; margin-left: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
+    .toggle-btn { padding: 3px 8px; border-radius: 4px; color: white !important; font-size: 0.75rem !important; }
+    .toggle-on { background-color: var(--success) !important; }
+    .toggle-off { background-color: var(--danger) !important; }
     .hidden { display: none !important; }
   </style>
 </head>
@@ -50,31 +50,31 @@
       <h1 id="portal-title">Exam Assessment Center</h1>
       <small style="color: #64748b;">Customizable Test & Evaluation Platform</small>
     </div>
-    <div id="nav-buttons">
-      <button type="button" class="btn btn-secondary" id="btn-admin-panel" onclick="showAdminLogin()">Admin Panel</button>
-      <button type="button" class="btn btn-secondary hidden" id="btn-back-home" onclick="showHome()">Student Portal</button>
+    <div>
+      <button type="button" class="btn btn-secondary" id="btn-admin" onclick="showScreen('admin-login')">Admin Panel</button>
+      <button type="button" class="btn btn-secondary hidden" id="btn-student" onclick="showScreen('home')">Student Portal</button>
     </div>
   </header>
 
-  <!-- 1. Home / Student Selection Screen -->
+  <!-- 1. Student Portal Screen -->
   <div id="home-screen" class="card">
-    <h2 style="margin-bottom: 15px;">Student Registration & Exam Selection</h2>
+    <h2 style="margin-bottom: 15px;">Student Exam Entry</h2>
     
     <label>Student Full Name:</label>
-    <input type="text" id="student-name" placeholder="Enter your name">
+    <input type="text" id="student-name" placeholder="Enter your full name">
 
-    <label>Student Grade / Class:</label>
-    <input type="text" id="student-grade" placeholder="e.g. Grade 10, Class A, B2 Level">
+    <label>Grade / Class:</label>
+    <input type="text" id="student-grade" placeholder="e.g. Grade 10, Class B, B2 Level">
 
-    <label>Select Examination Category:</label>
-    <select id="exam-select" onchange="renderExamDetails()"></select>
+    <label>Select Examination:</label>
+    <select id="exam-select" onchange="updateExamDetails()"></select>
 
     <div id="exam-info" style="margin-bottom: 20px;">
       <p><strong>Configured Duration:</strong> <span id="info-duration">0</span> minutes</p>
       <p><strong>Total Questions:</strong> <span id="info-count">0</span></p>
     </div>
 
-    <button type="button" class="btn btn-success" style="width: 100%; font-size: 1.1rem;" onclick="startExam()">Start Examination Now</button>
+    <button type="button" class="btn btn-success" style="width: 100%; font-size: 1.1rem;" onclick="startExam()">Start Examination</button>
   </div>
 
   <!-- 2. Active Exam Screen -->
@@ -82,102 +82,105 @@
     <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
       <div>
         <h2 id="current-exam-title">Examination</h2>
-        <div class="student-badge" id="top-student-info" style="margin-top: 5px;"></div>
+        <div class="student-badge" id="exam-student-meta"></div>
       </div>
       <div class="timer-badge" id="timer">00:00</div>
     </div>
 
-    <form id="exam-form">
-      <div id="questions-container"></div>
-      <button type="button" class="btn btn-success" style="width: 100%; margin-top: 15px; font-size: 1.1rem;" onclick="submitExam(false)">Submit Answers</button>
-    </form>
+    <div class="card">
+      <form id="exam-form">
+        <div id="questions-container"></div>
+        <button type="button" class="btn btn-success" style="width: 100%; margin-top: 15px; font-size: 1.1rem;" onclick="submitExam(false)">Submit Answers</button>
+      </form>
+    </div>
   </div>
 
   <!-- 3. Result Screen -->
   <div id="result-screen" class="card hidden" style="text-align: center;">
-    <h2>Test Completed</h2>
+    <h2>Examination Finished</h2>
     <div style="margin: 20px 0;">
-      <p style="font-size: 1.1rem;"><strong>Student Name:</strong> <span id="res-student-name"></span></p>
-      <p style="font-size: 1.1rem; margin-top: 5px;"><strong>Grade:</strong> <span id="res-student-grade"></span></p>
-      <p style="font-size: 1.3rem; margin-top: 15px; color: var(--primary);"><strong>Final Score:</strong> <span id="score-text">0 / 0</span></p>
+      <p style="font-size: 1.15rem;"><strong>Student Name:</strong> <span id="res-name"></span></p>
+      <p style="font-size: 1.15rem; margin-top: 6px;"><strong>Grade / Class:</strong> <span id="res-grade"></span></p>
+      <p style="font-size: 1.4rem; margin-top: 15px; color: var(--primary);"><strong>Score:</strong> <span id="res-score"></span></p>
     </div>
     <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-      <button type="button" class="btn btn-success" onclick="downloadReport()">Download Report (.txt)</button>
-      <button type="button" class="btn" onclick="showHome()">Return to Main Menu</button>
+      <button type="button" class="btn btn-success" onclick="downloadResultReport()">Download Report (.txt)</button>
+      <button type="button" class="btn btn-secondary" onclick="showScreen('home')">Return to Portal</button>
     </div>
   </div>
 
   <!-- 4. Admin Login Screen -->
   <div id="admin-login-screen" class="card hidden">
     <h2>Admin Authentication</h2>
-    <p style="margin-bottom: 10px; color: #64748b;">Access is restricted to instructors only.</p>
+    <p style="margin-bottom: 10px; color: #64748b;">Authorized teacher/evaluator access only.</p>
     
     <label>Admin Passcode:</label>
     <div class="password-field">
-      <input type="password" id="admin-pass" placeholder="Enter password (default: admin123)" autocomplete="off" autocapitalize="none">
-      <button type="button" class="toggle-password" onclick="togglePasswordVisibility('admin-pass', this)">👁️</button>
+      <input type="password" id="admin-pass" placeholder="Default: admin123" autocomplete="off">
+      <button type="button" class="toggle-password" onclick="toggleEye('admin-pass', this)">👁️</button>
     </div>
     
-    <button type="button" class="btn" onclick="loginAdmin()">Login</button>
+    <button type="button" class="btn" onclick="handleLogin()">Login</button>
   </div>
 
-  <!-- 5. Admin Dashboard -->
-  <div id="admin-dashboard" class="hidden">
-    <!-- Security Settings -->
+  <!-- 5. Admin Dashboard Screen -->
+  <div id="admin-dashboard-screen" class="hidden">
+    <!-- Security Box -->
     <div class="card" style="border-left: 4px solid var(--primary);">
       <h3>Admin Security Settings</h3>
-      <p style="color: #64748b; margin-bottom: 10px;">Update your admin password anytime below.</p>
+      <p style="color: #64748b; margin-bottom: 10px;">Update admin credentials below.</p>
       
       <label>Current Password:</label>
       <div class="password-field">
-        <input type="password" id="old-pass" placeholder="Enter current password" autocapitalize="none">
-        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('old-pass', this)">👁️</button>
+        <input type="password" id="old-pass" placeholder="Enter current password">
+        <button type="button" class="toggle-password" onclick="toggleEye('old-pass', this)">👁️</button>
       </div>
       
       <label>New Password:</label>
       <div class="password-field">
-        <input type="password" id="new-pass" placeholder="Enter new password (min 4 characters)" autocapitalize="none">
-        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('new-pass', this)">👁️</button>
+        <input type="password" id="new-pass" placeholder="Enter new password (min 4 chars)">
+        <button type="button" class="toggle-password" onclick="toggleEye('new-pass', this)">👁️</button>
       </div>
       
-      <button type="button" class="btn" onclick="changeAdminPassword()">Update Password</button>
+      <button type="button" class="btn" onclick="updatePassword()">Save New Password</button>
     </div>
 
-    <!-- Category Settings with ON/OFF -->
+    <!-- Category Manager with ON/OFF -->
     <div class="card" style="border-left: 4px solid var(--secondary);">
-      <h3>Manage Exam Categories</h3>
-      <p style="color: #64748b; margin-bottom: 10px;">Create categories and toggle student availability.</p>
+      <h3>Manage Categories & Student Visibility</h3>
+      <p style="color: #64748b; margin-bottom: 10px;">Toggle ON to show on the student portal, or OFF to hide.</p>
 
       <div style="display: flex; gap: 8px;">
-        <input type="text" id="new-custom-category" placeholder="Enter new category name..." style="margin-bottom: 0;">
-        <button type="button" class="btn" onclick="addCustomCategory()" style="white-space: nowrap;">Add Category</button>
+        <input type="text" id="custom-cat-input" placeholder="Enter category name (e.g. CEFR B2, Midterm)" style="margin-bottom: 0;">
+        <button type="button" class="btn" onclick="addCategory()" style="white-space: nowrap;">Add</button>
       </div>
 
       <div style="margin-top: 15px;">
-        <label>Category Visibility Control (On / Off):</label>
-        <div id="category-chips" style="margin-top: 5px;"></div>
+        <label>Active Categories List:</label>
+        <div id="category-chips-wrapper" style="margin-top: 5px;"></div>
       </div>
     </div>
 
-    <!-- Durations & Questions -->
+    <!-- Test Settings & Question Management -->
     <div class="card">
-      <h2>Configure Test Durations</h2>
+      <h2>Configure Durations & Question Banks</h2>
+      
       <label>Select Category:</label>
-      <select id="config-category" onchange="loadCategoryDuration()"></select>
+      <select id="config-cat-select" onchange="syncDurationInput()"></select>
 
-      <label>Test Duration (Minutes):</label>
-      <input type="number" id="new-duration" min="1" placeholder="e.g. 25">
+      <label>Duration (in minutes):</label>
+      <input type="number" id="cat-duration" min="1" placeholder="Duration in minutes">
 
       <button type="button" class="btn" style="margin-bottom: 20px;" onclick="saveDuration()">Save Duration</button>
 
       <hr style="margin: 20px 0;">
 
-      <h3>Add Question to Category</h3>
-      <label>Category for this Question:</label>
-      <select id="question-category"></select>
+      <h3>Add a Question</h3>
+      <label>Target Category:</label>
+      <select id="target-cat-select"></select>
 
-      <label>Question Prompt / Text:</label>
-      <textarea id="new-question" rows="3" placeholder="Enter question text here..."></textarea>
+      <label>Question Prompt:</label>
+      <textarea id="q-prompt" rows="3" placeholder="Enter question text here..."></textarea>
 
       <label>Option A:</label>
       <input type="text" id="opt-a" placeholder="Option A text">
@@ -191,8 +194,8 @@
       <label>Option D:</label>
       <input type="text" id="opt-d" placeholder="Option D text">
 
-      <label>Correct Answer:</label>
-      <select id="correct-opt">
+      <label>Select Correct Option:</label>
+      <select id="q-correct">
         <option value="0">Option A</option>
         <option value="1">Option B</option>
         <option value="2">Option C</option>
@@ -203,22 +206,22 @@
     </div>
 
     <div class="card">
-      <h3>Active Question Bank</h3>
-      <div id="admin-questions-list" style="margin-top: 15px;"></div>
+      <h3>Current Question Database</h3>
+      <div id="questions-list-wrapper" style="margin-top: 15px;"></div>
     </div>
   </div>
 </div>
 
 <script>
-  const DEFAULT_DATA = {
+  const DEFAULT_STATE = {
     adminPassword: "admin123",
     categories: [
       { name: "IELTS", enabled: true },
       { name: "CEFR", enabled: true }
     ],
-    settings: { 
-      IELTS: { duration: 15 }, 
-      CEFR: { duration: 20 } 
+    settings: {
+      "IELTS": { duration: 15 },
+      "CEFR": { duration: 20 }
     },
     questions: [
       {
@@ -238,236 +241,199 @@
     ]
   };
 
-  let db;
+  let db = null;
   try {
-    db = JSON.parse(localStorage.getItem('examData_v7'));
-  } catch(e) {
+    db = JSON.parse(localStorage.getItem('portal_db_master'));
+  } catch (e) {
     db = null;
   }
 
   if (!db || typeof db !== 'object') {
-    db = DEFAULT_DATA;
+    db = DEFAULT_STATE;
   }
   if (!db.adminPassword) db.adminPassword = "admin123";
+  if (!Array.isArray(db.categories)) db.categories = DEFAULT_STATE.categories;
+  if (!db.settings) db.settings = DEFAULT_STATE.settings;
+  if (!Array.isArray(db.questions)) db.questions = DEFAULT_STATE.questions;
 
-  if (!db.categories || !Array.isArray(db.categories)) {
-    db.categories = [
-      { name: "IELTS", enabled: true },
-      { name: "CEFR", enabled: true }
-    ];
-  } else if (typeof db.categories[0] === 'string') {
-    db.categories = db.categories.map(c => ({ name: c, enabled: true }));
+  function persist() {
+    localStorage.setItem('portal_db_master', JSON.stringify(db));
   }
+  persist();
 
-  if (!db.settings) db.settings = {};
-  if (!db.questions) db.questions = [];
+  let timerTimer = null;
+  let timeRemaining = 0;
+  let testActive = false;
+  let currentQuestions = [];
+  let studentData = { name: "", grade: "", category: "", score: "", records: [] };
 
-  function saveDb() { 
-    localStorage.setItem('examData_v7', JSON.stringify(db)); 
-  }
-  saveDb();
+  function showScreen(screen) {
+    testActive = false;
+    document.getElementById('main-header').classList.remove('hidden');
+    document.getElementById('home-screen').classList.add('hidden');
+    document.getElementById('exam-screen').classList.add('hidden');
+    document.getElementById('result-screen').classList.add('hidden');
+    document.getElementById('admin-login-screen').classList.add('hidden');
+    document.getElementById('admin-dashboard-screen').classList.add('hidden');
 
-  let timerInterval = null;
-  let remainingTime = 0;
-  let examActive = false;
-  let activeQuestions = [];
-  let currentStudent = { name: "", grade: "", category: "", scoreText: "", answers: [] };
-
-  function populateDropdowns() {
-    const examSelect = document.getElementById('exam-select');
-    const configCategory = document.getElementById('config-category');
-    const questionCategory = document.getElementById('question-category');
-
-    const curExam = examSelect.value;
-    const curConf = configCategory.value;
-    const curQues = questionCategory.value;
-
-    examSelect.innerHTML = '';
-    configCategory.innerHTML = '';
-    questionCategory.innerHTML = '';
-
-    const visibleCategories = db.categories.filter(c => c.enabled);
-    visibleCategories.forEach(cat => {
-      examSelect.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
-    });
-
-    db.categories.forEach(cat => {
-      configCategory.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
-      questionCategory.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
-    });
-
-    if (curExam && visibleCategories.some(c => c.name === curExam)) examSelect.value = curExam;
-    if (curConf && db.categories.some(c => c.name === curConf)) configCategory.value = curConf;
-    if (curQues && db.categories.some(c => c.name === curQues)) questionCategory.value = curQues;
-
-    renderExamDetails();
-    loadCategoryDuration();
-  }
-
-  function renderCategoryChips() {
-    const container = document.getElementById('category-chips');
-    container.innerHTML = '';
-    db.categories.forEach(cat => {
-      container.innerHTML += `
-        <span class="category-chip">
-          <strong>${cat.name}</strong>
-          <button type="button" class="toggle-btn ${cat.enabled ? 'toggle-on' : 'toggle-off'}" onclick="toggleCategory('${cat.name}')">
-            ${cat.enabled ? 'ON' : 'OFF'}
-          </button>
-          <button type="button" title="Delete Category" onclick="deleteCategory('${cat.name}')">×</button>
-        </span>
-      `;
-    });
-  }
-
-  function toggleCategory(name) {
-    const item = db.categories.find(c => c.name === name);
-    if (item) {
-      item.enabled = !item.enabled;
-      saveDb();
-      renderCategoryChips();
-      populateDropdowns();
+    if (screen === 'home') {
+      document.getElementById('home-screen').classList.remove('hidden');
+      document.getElementById('btn-admin').classList.remove('hidden');
+      document.getElementById('btn-student').classList.add('hidden');
+      refreshUI();
+    } else if (screen === 'admin-login') {
+      document.getElementById('admin-login-screen').classList.remove('hidden');
+      document.getElementById('btn-admin').classList.add('hidden');
+      document.getElementById('btn-student').classList.remove('hidden');
+    } else if (screen === 'admin-dash') {
+      document.getElementById('admin-dashboard-screen').classList.remove('hidden');
+      document.getElementById('btn-admin').classList.add('hidden');
+      document.getElementById('btn-student').classList.remove('hidden');
+      refreshAdminUI();
+    } else if (screen === 'results') {
+      document.getElementById('result-screen').classList.remove('hidden');
+      document.getElementById('btn-admin').classList.remove('hidden');
+      document.getElementById('btn-student').classList.add('hidden');
     }
   }
 
-  function addCustomCategory() {
-    const input = document.getElementById('new-custom-category');
-    const val = input.value.trim();
-    if (!val) return alert('Enter a category name');
-    if (db.categories.some(c => c.name.toLowerCase() === val.toLowerCase())) {
-      return alert('This category already exists');
-    }
-
-    db.categories.push({ name: val, enabled: true });
-    if (!db.settings[val]) db.settings[val] = { duration: 15 };
-    saveDb();
-    input.value = '';
-    populateDropdowns();
-    renderCategoryChips();
-  }
-
-  function deleteCategory(name) {
-    if (db.categories.length <= 1) return alert('You must retain at least one category.');
-    if (!confirm(`Delete category "${name}"?`)) return;
-
-    db.categories = db.categories.filter(c => c.name !== name);
-    delete db.settings[name];
-    saveDb();
-    populateDropdowns();
-    renderCategoryChips();
-  }
-
-  function loadCategoryDuration() {
-    const catEl = document.getElementById('config-category');
-    if (!catEl || !catEl.value) {
-      document.getElementById('new-duration').value = 15;
-      return;
-    }
-    const cat = catEl.value;
-    document.getElementById('new-duration').value = db.settings[cat]?.duration || 15;
-  }
-
-  function togglePasswordVisibility(inputId, button) {
-    const input = document.getElementById(inputId);
-    if (input.type === "password") {
-      input.type = "text";
-      button.innerText = "🙈";
+  function toggleEye(id, btn) {
+    const el = document.getElementById(id);
+    if (el.type === "password") {
+      el.type = "text";
+      btn.innerText = "🙈";
     } else {
-      input.type = "password";
-      button.innerText = "👁️";
+      el.type = "password";
+      btn.innerText = "👁️";
     }
   }
 
-  function renderExamDetails() {
-    const cat = document.getElementById('exam-select').value;
+  function refreshUI() {
+    const sel = document.getElementById('exam-select');
+    const prev = sel.value;
+    sel.innerHTML = '';
+    const visible = db.categories.filter(c => c.enabled);
+    visible.forEach(c => {
+      sel.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+    });
+    if (visible.some(c => c.name === prev)) {
+      sel.value = prev;
+    }
+    updateExamDetails();
+  }
+
+  function updateExamDetails() {
+    const sel = document.getElementById('exam-select');
+    const cat = sel.value;
     if (!cat) {
       document.getElementById('info-duration').innerText = "0";
       document.getElementById('info-count').innerText = "0";
       return;
     }
     const count = db.questions.filter(q => q.category === cat).length;
-    document.getElementById('info-duration').innerText = db.settings[cat]?.duration || 15;
+    const dur = db.settings[cat]?.duration || 15;
+    document.getElementById('info-duration').innerText = dur;
     document.getElementById('info-count').innerText = count;
   }
 
-  function showHome() {
-    examActive = false;
-    document.getElementById('main-header').classList.remove('hidden');
-    document.getElementById('btn-admin-panel').classList.remove('hidden');
-    document.getElementById('btn-back-home').classList.add('hidden');
+  function refreshAdminUI() {
+    const confSel = document.getElementById('config-cat-select');
+    const targetSel = document.getElementById('target-cat-select');
+    const prevConf = confSel.value;
+    const prevTarget = targetSel.value;
 
-    document.getElementById('home-screen').classList.remove('hidden');
-    document.getElementById('exam-screen').classList.add('hidden');
-    document.getElementById('result-screen').classList.add('hidden');
-    document.getElementById('admin-login-screen').classList.add('hidden');
-    document.getElementById('admin-dashboard').classList.add('hidden');
-    populateDropdowns();
+    confSel.innerHTML = '';
+    targetSel.innerHTML = '';
+
+    db.categories.forEach(c => {
+      confSel.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+      targetSel.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+    });
+
+    if (db.categories.some(c => c.name === prevConf)) confSel.value = prevConf;
+    if (db.categories.some(c => c.name === prevTarget)) targetSel.value = prevTarget;
+
+    renderCategoryChips();
+    syncDurationInput();
+    renderQuestionsList();
   }
 
-  function showAdminLogin() {
-    document.getElementById('home-screen').classList.add('hidden');
-    document.getElementById('exam-screen').classList.add('hidden');
-    document.getElementById('result-screen').classList.add('hidden');
-    document.getElementById('admin-dashboard').classList.add('hidden');
-    document.getElementById('admin-login-screen').classList.remove('hidden');
-    
-    document.getElementById('btn-admin-panel').classList.add('hidden');
-    document.getElementById('btn-back-home').classList.remove('hidden');
+  function renderCategoryChips() {
+    const wrap = document.getElementById('category-chips-wrapper');
+    wrap.innerHTML = '';
+    db.categories.forEach(c => {
+      wrap.innerHTML += `
+        <span class="category-chip">
+          <strong>${c.name}</strong>
+          <button type="button" class="toggle-btn ${c.enabled ? 'toggle-on' : 'toggle-off'}" onclick="toggleCatState('${c.name}')">
+            ${c.enabled ? 'ON' : 'OFF'}
+          </button>
+          <button type="button" style="color:var(--danger);" title="Delete Category" onclick="removeCategory('${c.name}')">×</button>
+        </span>
+      `;
+    });
   }
 
-  function loginAdmin() {
-    const p = document.getElementById('admin-pass').value.trim();
-    if (!db.adminPassword) {
-      db.adminPassword = 'admin123';
-      saveDb();
-    }
-    if (p === db.adminPassword) {
-      document.getElementById('admin-pass').value = '';
-      document.getElementById('admin-login-screen').classList.add('hidden');
-      document.getElementById('admin-dashboard').classList.remove('hidden');
-      populateDropdowns();
+  function toggleCatState(name) {
+    const match = db.categories.find(c => c.name === name);
+    if (match) {
+      match.enabled = !match.enabled;
+      persist();
       renderCategoryChips();
-      renderAdminList();
-    } else {
-      alert('Incorrect passcode. Default is "admin123".');
+      refreshUI();
     }
   }
 
-  function changeAdminPassword() {
-    const oldP = document.getElementById('old-pass').value.trim();
-    const newP = document.getElementById('new-pass').value.trim();
+  function addCategory() {
+    const input = document.getElementById('custom-cat-input');
+    const name = input.value.trim();
+    if (!name) return alert('Enter a category name');
+    if (db.categories.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+      return alert('Category already exists');
+    }
+    db.categories.push({ name, enabled: true });
+    if (!db.settings[name]) db.settings[name] = { duration: 15 };
+    persist();
+    input.value = '';
+    refreshAdminUI();
+  }
 
-    if (oldP !== db.adminPassword) return alert('Current password is incorrect.');
-    if (!newP || newP.length < 4) return alert('New password must be at least 4 characters long.');
+  function removeCategory(name) {
+    if (db.categories.length <= 1) return alert('You must keep at least one category.');
+    if (!confirm(`Delete category "${name}"?`)) return;
+    db.categories = db.categories.filter(c => c.name !== name);
+    delete db.settings[name];
+    persist();
+    refreshAdminUI();
+  }
 
-    db.adminPassword = newP;
-    saveDb();
-    document.getElementById('old-pass').value = '';
-    document.getElementById('new-pass').value = '';
-    alert('Password updated successfully!');
+  function syncDurationInput() {
+    const cat = document.getElementById('config-cat-select').value;
+    document.getElementById('cat-duration').value = db.settings[cat]?.duration || 15;
   }
 
   function saveDuration() {
-    const cat = document.getElementById('config-category').value;
-    const d = parseInt(document.getElementById('new-duration').value);
-    if (!d || d < 1) return alert('Enter a valid duration');
+    const cat = document.getElementById('config-cat-select').value;
+    const dur = parseInt(document.getElementById('cat-duration').value);
+    if (!dur || dur < 1) return alert('Enter a valid duration');
     if (!db.settings[cat]) db.settings[cat] = {};
-    db.settings[cat].duration = d;
-    saveDb();
-    renderExamDetails();
-    alert(`Duration for ${cat} set to ${d} minutes.`);
+    db.settings[cat].duration = dur;
+    persist();
+    alert(`Duration for ${cat} set to ${dur} minutes.`);
   }
 
   function addQuestion() {
-    const prompt = document.getElementById('new-question').value.trim();
+    const cat = document.getElementById('target-cat-select').value;
+    const prompt = document.getElementById('q-prompt').value.trim();
     const a = document.getElementById('opt-a').value.trim();
     const b = document.getElementById('opt-b').value.trim();
     const c = document.getElementById('opt-c').value.trim();
     const d = document.getElementById('opt-d').value.trim();
-    const correct = parseInt(document.getElementById('correct-opt').value);
-    const cat = document.getElementById('question-category').value;
+    const correct = parseInt(document.getElementById('q-correct').value);
 
-    if (!prompt || !a || !b || !c || !d) return alert('Please fill in all options and question prompt.');
+    if (!prompt || !a || !b || !c || !d) {
+      return alert('Fill in the prompt and all four options.');
+    }
 
     db.questions.push({
       id: Date.now(),
@@ -476,26 +442,221 @@
       options: [a, b, c, d],
       correct
     });
-
-    saveDb();
-    alert('Question added successfully!');
-    document.getElementById('new-question').value = '';
+    persist();
+    alert('Question added.');
+    document.getElementById('q-prompt').value = '';
     document.getElementById('opt-a').value = '';
     document.getElementById('opt-b').value = '';
     document.getElementById('opt-c').value = '';
     document.getElementById('opt-d').value = '';
-    renderAdminList();
-    renderExamDetails();
+    renderQuestionsList();
   }
 
-  function deleteQuestion(id) {
+  function removeQuestion(id) {
     db.questions = db.questions.filter(q => q.id !== id);
-    saveDb();
-    renderAdminList();
-    renderExamDetails();
+    persist();
+    renderQuestionsList();
   }
 
-  function renderAdminList() {
-    const list = document.getElementById('admin-questions-list');
-    list.innerHTML = '';
-    if (db.questions.length === 0)
+  function renderQuestionsList() {
+    const wrap = document.getElementById('questions-list-wrapper');
+    wrap.innerHTML = '';
+    if (!db.questions.length) {
+      wrap.innerHTML = '<p style="color:#64748b;">No questions registered.</p>';
+      return;
+    }
+    db.questions.forEach((q, idx) => {
+      wrap.innerHTML += `
+        <div class="question-block">
+          <p><strong>#${idx + 1} [${q.category}]</strong> ${q.prompt}</p>
+          <small style="color:var(--success);">Correct: Option ${String.fromCharCode(65 + q.correct)} (${q.options[q.correct]})</small><br>
+          <button type="button" class="btn btn-danger" style="padding:4px 8px; font-size:0.75rem; margin-top:5px;" onclick="removeQuestion(${q.id})">Delete</button>
+        </div>
+      `;
+    });
+  }
+
+  function handleLogin() {
+    const pass = document.getElementById('admin-pass').value.trim();
+    if (pass === db.adminPassword) {
+      document.getElementById('admin-pass').value = '';
+      showScreen('admin-dash');
+    } else {
+      alert('Incorrect passcode. Default is "admin123".');
+    }
+  }
+
+  function updatePassword() {
+    const oldP = document.getElementById('old-pass').value.trim();
+    const newP = document.getElementById('new-pass').value.trim();
+    if (oldP !== db.adminPassword) return alert('Current password does not match.');
+    if (!newP || newP.length < 4) return alert('Password must be at least 4 characters long.');
+    db.adminPassword = newP;
+    persist();
+    document.getElementById('old-pass').value = '';
+    document.getElementById('new-pass').value = '';
+    alert('Password updated.');
+  }
+
+  function startExam() {
+    const name = document.getElementById('student-name').value.trim();
+    const grade = document.getElementById('student-grade').value.trim();
+    const cat = document.getElementById('exam-select').value;
+
+    if (!name) return alert('Enter your Full Name.');
+    if (!grade) return alert('Enter your Grade / Class.');
+    if (!cat) return alert('No valid exam category selected.');
+
+    currentQuestions = db.questions.filter(q => q.category === cat);
+    if (!currentQuestions.length) {
+      return alert('No questions available in this category.');
+    }
+
+    studentData = { name, grade, category: cat, score: "", records: [] };
+
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+
+    document.getElementById('main-header').classList.add('hidden');
+    document.getElementById('home-screen').classList.add('hidden');
+    document.getElementById('exam-screen').classList.remove('hidden');
+
+    document.getElementById('current-exam-title').innerText = `${cat} Examination`;
+    document.getElementById('exam-student-meta').innerText = `Student: ${name} | Grade: ${grade}`;
+
+    const container = document.getElementById('questions-container');
+    container.innerHTML = '';
+    currentQuestions.forEach((q, idx) => {
+      container.innerHTML += `
+        <div class="question-block">
+          <p style="font-weight:600; margin-bottom:10px;">${idx + 1}. ${q.prompt}</p>
+          ${q.options.map((opt, oIdx) => `
+            <label class="option-label">
+              <input type="radio" name="active_q_${q.id}" value="${oIdx}">
+              ${String.fromCharCode(65 + oIdx)}. ${opt}
+            </label>
+          `).join('')}
+        </div>
+      `;
+    });
+
+    testActive = true;
+    timeRemaining = (db.settings[cat]?.duration || 15) * 60;
+    runTimer();
+  }
+
+  function runTimer() {
+    clearInterval(timerTimer);
+    updateTimerText();
+    timerTimer = setInterval(() => {
+      timeRemaining--;
+      updateTimerText();
+      if (timeRemaining <= 0) {
+        clearInterval(timerTimer);
+        alert('Time elapsed. Submitting test.');
+        submitExam(true);
+      }
+    }, 1000);
+  }
+
+  function updateTimerText() {
+    const m = Math.floor(timeRemaining / 60);
+    const s = timeRemaining % 60;
+    document.getElementById('timer').innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+
+  function submitExam(force = false) {
+    if (!force && !confirm('Submit your test answers now?')) return;
+    clearInterval(timerTimer);
+    testActive = false;
+
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+
+    let correctCount = 0;
+    studentData.records = [];
+
+    currentQuestions.forEach(q => {
+      const checked = document.querySelector(`input[name="active_q_${q.id}"]:checked`);
+      const selected = checked ? parseInt(checked.value) : -1;
+      const isRight = selected === q.correct;
+      if (isRight) correctCount++;
+
+      studentData.records.push({
+        prompt: q.prompt,
+        options: q.options,
+        selected,
+        correct: q.correct,
+        isRight
+      });
+    });
+
+    studentData.score = `${correctCount} / ${currentQuestions.length}`;
+
+    document.getElementById('exam-screen').classList.add('hidden');
+    document.getElementById('res-name').innerText = studentData.name;
+    document.getElementById('res-grade').innerText = studentData.grade;
+    document.getElementById('res-score').innerText = studentData.score;
+    showScreen('results');
+  }
+
+  function downloadResultReport() {
+    let out = `=================================================\n`;
+    out += `         OFFICIAL EXAMINATION REPORT             \n`;
+    out += `=================================================\n\n`;
+    out += `Student Name   : ${studentData.name}\n`;
+    out += `Grade / Class  : ${studentData.grade}\n`;
+    out += `Exam Category  : ${studentData.category}\n`;
+    out += `Final Score    : ${studentData.score}\n`;
+    out += `Date / Time    : ${new Date().toLocaleString()}\n\n`;
+    out += `-------------------------------------------------\n`;
+    out += `               QUESTION BREAKDOWN                \n`;
+    out += `-------------------------------------------------\n\n`;
+
+    studentData.records.forEach((r, idx) => {
+      out += `Q${idx + 1}: ${r.prompt}\n`;
+      const yourAns = r.selected !== -1
+        ? `${String.fromCharCode(65 + r.selected)}. ${r.options[r.selected]}`
+        : 'No Answer Provided';
+      const rightAns = `${String.fromCharCode(65 + r.correct)}. ${r.options[r.correct]}`;
+
+      if (r.isRight) {
+        out += `Your Answer   : [CORRECT] ${yourAns}\n`;
+      } else {
+        out += `Your Answer   : [WRONG] ${yourAns}  --->  [CORRECT ANSWER]: ${rightAns}\n`;
+      }
+      out += `\n`;
+    });
+
+    out += `=================================================\n`;
+    out += `                 END OF REPORT                   \n`;
+    out += `=================================================\n`;
+
+    const blob = new Blob([out], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${studentData.name.replace(/\s+/g, '_')}_${studentData.category}_Report.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  window.addEventListener('beforeunload', (e) => {
+    if (testActive) {
+      e.preventDefault();
+      e.returnValue = 'Examination in progress!';
+    }
+  });
+
+  window.addEventListener('blur', () => {
+    if (testActive) {
+      alert('Warning: Leaving the active exam tab is not permitted.');
+    }
+  });
+
+  showScreen('home');
+</script>
+</body>
+</html>

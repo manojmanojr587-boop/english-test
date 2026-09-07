@@ -51,8 +51,8 @@
       <small style="color: #64748b;">Customizable Test & Evaluation Platform</small>
     </div>
     <div id="nav-buttons">
-      <button class="btn btn-secondary" id="btn-admin-panel" onclick="showAdminLogin()">Admin Panel</button>
-      <button class="btn btn-secondary hidden" id="btn-back-home" onclick="showHome()">Student Portal</button>
+      <button type="button" class="btn btn-secondary" id="btn-admin-panel" onclick="showAdminLogin()">Admin Panel</button>
+      <button type="button" class="btn btn-secondary hidden" id="btn-back-home" onclick="showHome()">Student Portal</button>
     </div>
   </header>
 
@@ -74,7 +74,7 @@
       <p><strong>Total Questions:</strong> <span id="info-count">0</span></p>
     </div>
 
-    <button class="btn btn-success" style="width: 100%; font-size: 1.1rem;" onclick="startExam()">Start Examination Now</button>
+    <button type="button" class="btn btn-success" style="width: 100%; font-size: 1.1rem;" onclick="startExam()">Start Examination Now</button>
   </div>
 
   <!-- 2. Active Exam Screen -->
@@ -102,8 +102,8 @@
       <p style="font-size: 1.3rem; margin-top: 15px; color: var(--primary);"><strong>Final Score:</strong> <span id="score-text">0 / 0</span></p>
     </div>
     <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-      <button class="btn btn-success" onclick="downloadReport()">Download Report (.txt)</button>
-      <button class="btn" onclick="showHome()">Return to Main Menu</button>
+      <button type="button" class="btn btn-success" onclick="downloadReport()">Download Report (.txt)</button>
+      <button type="button" class="btn" onclick="showHome()">Return to Main Menu</button>
     </div>
   </div>
 
@@ -118,12 +118,12 @@
       <button type="button" class="toggle-password" onclick="togglePasswordVisibility('admin-pass', this)">👁️</button>
     </div>
     
-    <button class="btn" onclick="loginAdmin()">Login</button>
+    <button type="button" class="btn" onclick="loginAdmin()">Login</button>
   </div>
 
   <!-- 5. Admin Dashboard -->
   <div id="admin-dashboard" class="hidden">
-    <!-- Security Box -->
+    <!-- Security Settings -->
     <div class="card" style="border-left: 4px solid var(--primary);">
       <h3>Admin Security Settings</h3>
       <p style="color: #64748b; margin-bottom: 10px;">Update your admin password anytime below.</p>
@@ -140,17 +140,17 @@
         <button type="button" class="toggle-password" onclick="togglePasswordVisibility('new-pass', this)">👁️</button>
       </div>
       
-      <button class="btn" onclick="changeAdminPassword()">Update Password</button>
+      <button type="button" class="btn" onclick="changeAdminPassword()">Update Password</button>
     </div>
 
-    <!-- Category Customization Box with On/Off Visibility -->
+    <!-- Category Settings with ON/OFF -->
     <div class="card" style="border-left: 4px solid var(--secondary);">
       <h3>Manage Exam Categories</h3>
-      <p style="color: #64748b; margin-bottom: 10px;">Create categories and toggle their availability for students.</p>
+      <p style="color: #64748b; margin-bottom: 10px;">Create categories and toggle student availability.</p>
 
       <div style="display: flex; gap: 8px;">
         <input type="text" id="new-custom-category" placeholder="Enter new category name..." style="margin-bottom: 0;">
-        <button class="btn" onclick="addCustomCategory()" style="white-space: nowrap;">Add Category</button>
+        <button type="button" class="btn" onclick="addCustomCategory()" style="white-space: nowrap;">Add Category</button>
       </div>
 
       <div style="margin-top: 15px;">
@@ -159,7 +159,7 @@
       </div>
     </div>
 
-    <!-- Duration & Questions Box -->
+    <!-- Durations & Questions -->
     <div class="card">
       <h2>Configure Test Durations</h2>
       <label>Select Category:</label>
@@ -168,7 +168,7 @@
       <label>Test Duration (Minutes):</label>
       <input type="number" id="new-duration" min="1" placeholder="e.g. 25">
 
-      <button class="btn" style="margin-bottom: 20px;" onclick="saveDuration()">Save Duration</button>
+      <button type="button" class="btn" style="margin-bottom: 20px;" onclick="saveDuration()">Save Duration</button>
 
       <hr style="margin: 20px 0;">
 
@@ -199,7 +199,7 @@
         <option value="3">Option D</option>
       </select>
 
-      <button class="btn btn-success" onclick="addQuestion()">Add Question</button>
+      <button type="button" class="btn btn-success" onclick="addQuestion()">Add Question</button>
     </div>
 
     <div class="card">
@@ -238,13 +238,18 @@
     ]
   };
 
-  let db = JSON.parse(localStorage.getItem('examData_v6'));
+  let db;
+  try {
+    db = JSON.parse(localStorage.getItem('examData_v7'));
+  } catch(e) {
+    db = null;
+  }
+
   if (!db || typeof db !== 'object') {
     db = DEFAULT_DATA;
   }
   if (!db.adminPassword) db.adminPassword = "admin123";
 
-  // Upgrade string-based category formats to objects with enabled flags
   if (!db.categories || !Array.isArray(db.categories)) {
     db.categories = [
       { name: "IELTS", enabled: true },
@@ -255,9 +260,10 @@
   }
 
   if (!db.settings) db.settings = {};
+  if (!db.questions) db.questions = [];
 
   function saveDb() { 
-    localStorage.setItem('examData_v6', JSON.stringify(db)); 
+    localStorage.setItem('examData_v7', JSON.stringify(db)); 
   }
   saveDb();
 
@@ -280,20 +286,19 @@
     configCategory.innerHTML = '';
     questionCategory.innerHTML = '';
 
-    // Only enabled categories display for the student portal
-    db.categories.filter(c => c.enabled).forEach(cat => {
+    const visibleCategories = db.categories.filter(c => c.enabled);
+    visibleCategories.forEach(cat => {
       examSelect.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
     });
 
-    // Admin controls display all configured categories
     db.categories.forEach(cat => {
       configCategory.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
       questionCategory.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
     });
 
-    if (curExam) examSelect.value = curExam;
-    if (curConf) configCategory.value = curConf;
-    if (curQues) questionCategory.value = curQues;
+    if (curExam && visibleCategories.some(c => c.name === curExam)) examSelect.value = curExam;
+    if (curConf && db.categories.some(c => c.name === curConf)) configCategory.value = curConf;
+    if (curQues && db.categories.some(c => c.name === curQues)) questionCategory.value = curQues;
 
     renderExamDetails();
     loadCategoryDuration();
@@ -309,7 +314,7 @@
           <button type="button" class="toggle-btn ${cat.enabled ? 'toggle-on' : 'toggle-off'}" onclick="toggleCategory('${cat.name}')">
             ${cat.enabled ? 'ON' : 'OFF'}
           </button>
-          <button title="Delete Category" onclick="deleteCategory('${cat.name}')">×</button>
+          <button type="button" title="Delete Category" onclick="deleteCategory('${cat.name}')">×</button>
         </span>
       `;
     });
@@ -353,7 +358,12 @@
   }
 
   function loadCategoryDuration() {
-    const cat = document.getElementById('config-category').value;
+    const catEl = document.getElementById('config-category');
+    if (!catEl || !catEl.value) {
+      document.getElementById('new-duration').value = 15;
+      return;
+    }
+    const cat = catEl.value;
     document.getElementById('new-duration').value = db.settings[cat]?.duration || 15;
   }
 
@@ -398,7 +408,9 @@
     document.getElementById('home-screen').classList.add('hidden');
     document.getElementById('exam-screen').classList.add('hidden');
     document.getElementById('result-screen').classList.add('hidden');
+    document.getElementById('admin-dashboard').classList.add('hidden');
     document.getElementById('admin-login-screen').classList.remove('hidden');
+    
     document.getElementById('btn-admin-panel').classList.add('hidden');
     document.getElementById('btn-back-home').classList.remove('hidden');
   }
@@ -486,13 +498,4 @@
   function renderAdminList() {
     const list = document.getElementById('admin-questions-list');
     list.innerHTML = '';
-    if (db.questions.length === 0) {
-      list.innerHTML = '<p style="color:#64748b;">No questions available.</p>';
-      return;
-    }
-    db.questions.forEach((q, idx) => {
-      list.innerHTML += `
-        <div class="question-block">
-          <p><strong>#${idx + 1} [${q.category}]</strong> ${q.prompt}</p>
-          <small style="color:#16a34a;">Correct: Option ${String.fromCharCode(65 + q.correct)} (${q.options[q.correct]})</small><br>
-          <button cla
+    if (db.questions.length === 0)

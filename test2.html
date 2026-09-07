@@ -296,7 +296,7 @@
       });
     } else {
       // Offline / Local fallback if Firebase keys are not yet inserted
-      const local = localStorage.getItem('portal_db_master');
+      const local = localStorage.getItem('portal_db_v2');
       if (local) db = JSON.parse(local);
     }
   } catch (err) {

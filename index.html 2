@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Examination & Assessment Portal</title>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --secondary: #0284c7;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #1e293b;
+      --danger: #dc2626;
+      --success: #16a34a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 20px; }
+    .container { max-width: 850px; margin: 0 auto; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e2e8f0; }
+    h1 { font-size: 1.5rem; color: var(--primary); }
+    .card { background: var(--card); border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 20px; }
+    .btn { background: var(--primary); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 600; }
+    .btn:hover { opacity: 0.9; }
+    .btn-secondary { background: #64748b; }
+    .btn-danger { background: var(--danger); }
+    .btn-success { background: var(--success); }
+    input, select, textarea { width: 100%; padding: 10px; margin: 8px 0 16px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; }
+    .password-field { position: relative; margin-bottom: 16px; }
+    .password-field input { margin: 8px 0 0 0; padding-right: 46px; }
+    .toggle-password { position: absolute; right: 12px; top: 50%; transform: translateY(-10%); background: none; border: none; cursor: pointer; font-size: 1.2rem; color: #64748b; }
+    .timer-badge { font-size: 1.2rem; font-weight: bold; color: var(--danger); background: #fee2e2; padding: 8px 16px; border-radius: 6px; }
+    .student-badge { font-size: 1rem; color: var(--primary); font-weight: 600; background: #e0f2fe; padding: 6px 14px; border-radius: 6px; }
+    .question-block { border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 15px; }
+    .option-label { display: flex; align-items: center; margin-bottom: 8px; cursor: pointer; }
+    .option-label input { width: auto; margin-right: 10px; margin-top: 0; }
+    .category-chip { display: inline-flex; align-items: center; background: #e0f2fe; color: #0369a1; padding: 6px 12px; border-radius: 20px; margin: 4px; font-size: 0.9rem; }
+    .category-chip button { background: none; border: none; margin-left: 8px; color: var(--danger); font-weight: bold; cursor: pointer; font-size: 1rem; }
+    .toggle-btn { padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; margin-left: 8px; font-weight: bold; cursor: pointer; border: none; color: white; }
+    .toggle-on { background-color: var(--success); }
+    .toggle-off { background-color: var(--danger); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header id="main-header">
+    <div>
+      <h1 id="portal-title">Exam Assessment Center</h1>
+      <small style="color: #64748b;">Customizable Test & Evaluation Platform</small>
+    </div>
+    <div id="nav-buttons">
+      <button class="btn btn-secondary" id="btn-admin-panel" onclick="showAdminLogin()">Admin Panel</button>
+      <button class="btn btn-secondary hidden" id="btn-back-home" onclick="showHome()">Student Portal</button>
+    </div>
+  </header>
+
+  <!-- 1. Home / Student Selection Screen -->
+  <div id="home-screen" class="card">
+    <h2 style="margin-bottom: 15px;">Student Registration & Exam Selection</h2>
+    
+    <label>Student Full Name:</label>
+    <input type="text" id="student-name" placeholder="Enter your name">
+
+    <label>Student Grade / Class:</label>
+    <input type="text" id="student-grade" placeholder="e.g. Grade 10, Class A, B2 Level">
+
+    <label>Select Examination Category:</label>
+    <select id="exam-select" onchange="renderExamDetails()"></select>
+
+    <div id="exam-info" style="margin-bottom: 20px;">
+      <p><strong>Configured Duration:</strong> <span id="info-duration">0</span> minutes</p>
+      <p><strong>Total Questions:</strong> <span id="info-count">0</span></p>
+    </div>
+
+    <button class="btn btn-success" style="width: 100%; font-size: 1.1rem;" onclick="startExam()">Start Examination Now</button>
+  </div>
+
+  <!-- 2. Active Exam Screen -->
+  <div id="exam-screen" class="hidden">
+    <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <div>
+        <h2 id="current-exam-title">Examination</h2>
+        <div class="student-badge" id="top-student-info" style="margin-top: 5px;"></div>
+      </div>
+      <div class="timer-badge" id="timer">00:00</div>
+    </div>
+
+    <form id="exam-form">
+      <div id="questions-container"></div>
+      <button type="button" class="btn btn-success" style="width: 100%; margin-top: 15px; font-size: 1.1rem;" onclick="submitExam(false)">Submit Answers</button>
+    </form>
+  </div>
+
+  <!-- 3. Result Screen -->
+  <div id="result-screen" class="card hidden" style="text-align: center;">
+    <h2>Test Completed</h2>
+    <div style="margin: 20px 0;">
+      <p style="font-size: 1.1rem;"><strong>Student Name:</strong> <span id="res-student-name"></span></p>
+      <p style="font-size: 1.1rem; margin-top: 5px;"><strong>Grade:</strong> <span id="res-student-grade"></span></p>
+      <p style="font-size: 1.3rem; margin-top: 15px; color: var(--primary);"><strong>Final Score:</strong> <span id="score-text">0 / 0</span></p>
+    </div>
+    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+      <button class="btn btn-success" onclick="downloadReport()">Download Report (.txt)</button>
+      <button class="btn" onclick="showHome()">Return to Main Menu</button>
+    </div>
+  </div>
+
+  <!-- 4. Admin Login Screen -->
+  <div id="admin-login-screen" class="card hidden">
+    <h2>Admin Authentication</h2>
+    <p style="margin-bottom: 10px; color: #64748b;">Access is restricted to instructors only.</p>
+    
+    <label>Admin Passcode:</label>
+    <div class="password-field">
+      <input type="password" id="admin-pass" placeholder="Enter password (default: admin123)" autocomplete="off" autocapitalize="none">
+      <button type="button" class="toggle-password" onclick="togglePasswordVisibility('admin-pass', this)">👁️</button>
+    </div>
+    
+    <button class="btn" onclick="loginAdmin()">Login</button>
+  </div>
+
+  <!-- 5. Admin Dashboard -->
+  <div id="admin-dashboard" class="hidden">
+    <!-- Security Box -->
+    <div class="card" style="border-left: 4px solid var(--primary);">
+      <h3>Admin Security Settings</h3>
+      <p style="color: #64748b; margin-bottom: 10px;">Update your admin password anytime below.</p>
+      
+      <label>Current Password:</label>
+      <div class="password-field">
+        <input type="password" id="old-pass" placeholder="Enter current password" autocapitalize="none">
+        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('old-pass', this)">👁️</button>
+      </div>
+      
+      <label>New Password:</label>
+      <div class="password-field">
+        <input type="password" id="new-pass" placeholder="Enter new password (min 4 characters)" autocapitalize="none">
+        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('new-pass', this)">👁️</button>
+      </div>
+      
+      <button class="btn" onclick="changeAdminPassword()">Update Password</button>
+    </div>
+
+    <!-- Category Customization Box with On/Off Visibility -->
+    <div class="card" style="border-left: 4px solid var(--secondary);">
+      <h3>Manage Exam Categories</h3>
+      <p style="color: #64748b; margin-bottom: 10px;">Create categories and toggle their availability for students.</p>
+
+      <div style="display: flex; gap: 8px;">
+        <input type="text" id="new-custom-category" placeholder="Enter new category name..." style="margin-bottom: 0;">
+        <button class="btn" onclick="addCustomCategory()" style="white-space: nowrap;">Add Category</button>
+      </div>
+
+      <div style="margin-top: 15px;">
+        <label>Category Visibility Control (On / Off):</label>
+        <div id="category-chips" style="margin-top: 5px;"></div>
+      </div>
+    </div>
+
+    <!-- Duration & Questions Box -->
+    <div class="card">
+      <h2>Configure Test Durations</h2>
+      <label>Select Category:</label>
+      <select id="config-category" onchange="loadCategoryDuration()"></select>
+
+      <label>Test Duration (Minutes):</label>
+      <input type="number" id="new-duration" min="1" placeholder="e.g. 25">
+
+      <button class="btn" style="margin-bottom: 20px;" onclick="saveDuration()">Save Duration</button>
+
+      <hr style="margin: 20px 0;">
+
+      <h3>Add Question to Category</h3>
+      <label>Category for this Question:</label>
+      <select id="question-category"></select>
+
+      <label>Question Prompt / Text:</label>
+      <textarea id="new-question" rows="3" placeholder="Enter question text here..."></textarea>
+
+      <label>Option A:</label>
+      <input type="text" id="opt-a" placeholder="Option A text">
+
+      <label>Option B:</label>
+      <input type="text" id="opt-b" placeholder="Option B text">
+
+      <label>Option C:</label>
+      <input type="text" id="opt-c" placeholder="Option C text">
+
+      <label>Option D:</label>
+      <input type="text" id="opt-d" placeholder="Option D text">
+
+      <label>Correct Answer:</label>
+      <select id="correct-opt">
+        <option value="0">Option A</option>
+        <option value="1">Option B</option>
+        <option value="2">Option C</option>
+        <option value="3">Option D</option>
+      </select>
+
+      <button class="btn btn-success" onclick="addQuestion()">Add Question</button>
+    </div>
+
+    <div class="card">
+      <h3>Active Question Bank</h3>
+      <div id="admin-questions-list" style="margin-top: 15px;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const DEFAULT_DATA = {
+    adminPassword: "admin123",
+    categories: [
+      { name: "IELTS", enabled: true },
+      { name: "CEFR", enabled: true }
+    ],
+    settings: { 
+      IELTS: { duration: 15 }, 
+      CEFR: { duration: 20 } 
+    },
+    questions: [
+      {
+        id: 1,
+        category: "IELTS",
+        prompt: "Choose the word closest in meaning to 'abundant':",
+        options: ["Scarce", "Plentiful", "Fragile", "Minute"],
+        correct: 1
+      },
+      {
+        id: 2,
+        category: "CEFR",
+        prompt: "If she _______ harder, she would pass the Cambridge B2 exam.",
+        options: ["studies", "studied", "has studied", "will study"],
+        correct: 1
+      }
+    ]
+  };
+
+  let db = JSON.parse(localStorage.getItem('examData_v6'));
+  if (!db || typeof db !== 'object') {
+    db = DEFAULT_DATA;
+  }
+  if (!db.adminPassword) db.adminPassword = "admin123";
+
+  // Upgrade string-based category formats to objects with enabled flags
+  if (!db.categories || !Array.isArray(db.categories)) {
+    db.categories = [
+      { name: "IELTS", enabled: true },
+      { name: "CEFR", enabled: true }
+    ];
+  } else if (typeof db.categories[0] === 'string') {
+    db.categories = db.categories.map(c => ({ name: c, enabled: true }));
+  }
+
+  if (!db.settings) db.settings = {};
+
+  function saveDb() { 
+    localStorage.setItem('examData_v6', JSON.stringify(db)); 
+  }
+  saveDb();
+
+  let timerInterval = null;
+  let remainingTime = 0;
+  let examActive = false;
+  let activeQuestions = [];
+  let currentStudent = { name: "", grade: "", category: "", scoreText: "", answers: [] };
+
+  function populateDropdowns() {
+    const examSelect = document.getElementById('exam-select');
+    const configCategory = document.getElementById('config-category');
+    const questionCategory = document.getElementById('question-category');
+
+    const curExam = examSelect.value;
+    const curConf = configCategory.value;
+    const curQues = questionCategory.value;
+
+    examSelect.innerHTML = '';
+    configCategory.innerHTML = '';
+    questionCategory.innerHTML = '';
+
+    // Only enabled categories display for the student portal
+    db.categories.filter(c => c.enabled).forEach(cat => {
+      examSelect.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
+    });
+
+    // Admin controls display all configured categories
+    db.categories.forEach(cat => {
+      configCategory.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
+      questionCategory.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
+    });
+
+    if (curExam) examSelect.value = curExam;
+    if (curConf) configCategory.value = curConf;
+    if (curQues) questionCategory.value = curQues;
+
+    renderExamDetails();
+    loadCategoryDuration();
+  }
+
+  function renderCategoryChips() {
+    const container = document.getElementById('category-chips');
+    container.innerHTML = '';
+    db.categories.forEach(cat => {
+      container.innerHTML += `
+        <span class="category-chip">
+          <strong>${cat.name}</strong>
+          <button type="button" class="toggle-btn ${cat.enabled ? 'toggle-on' : 'toggle-off'}" onclick="toggleCategory('${cat.name}')">
+            ${cat.enabled ? 'ON' : 'OFF'}
+          </button>
+          <button title="Delete Category" onclick="deleteCategory('${cat.name}')">×</button>
+        </span>
+      `;
+    });
+  }
+
+  function toggleCategory(name) {
+    const item = db.categories.find(c => c.name === name);
+    if (item) {
+      item.enabled = !item.enabled;
+      saveDb();
+      renderCategoryChips();
+      populateDropdowns();
+    }
+  }
+
+  function addCustomCategory() {
+    const input = document.getElementById('new-custom-category');
+    const val = input.value.trim();
+    if (!val) return alert('Enter a category name');
+    if (db.categories.some(c => c.name.toLowerCase() === val.toLowerCase())) {
+      return alert('This category already exists');
+    }
+
+    db.categories.push({ name: val, enabled: true });
+    if (!db.settings[val]) db.settings[val] = { duration: 15 };
+    saveDb();
+    input.value = '';
+    populateDropdowns();
+    renderCategoryChips();
+  }
+
+  function deleteCategory(name) {
+    if (db.categories.length <= 1) return alert('You must retain at least one category.');
+    if (!confirm(`Delete category "${name}"?`)) return;
+
+    db.categories = db.categories.filter(c => c.name !== name);
+    delete db.settings[name];
+    saveDb();
+    populateDropdowns();
+    renderCategoryChips();
+  }
+
+  function loadCategoryDuration() {
+    const cat = document.getElementById('config-category').value;
+    document.getElementById('new-duration').value = db.settings[cat]?.duration || 15;
+  }
+
+  function togglePasswordVisibility(inputId, button) {
+    const input = document.getElementById(inputId);
+    if (input.type === "password") {
+      input.type = "text";
+      button.innerText = "🙈";
+    } else {
+      input.type = "password";
+      button.innerText = "👁️";
+    }
+  }
+
+  function renderExamDetails() {
+    const cat = document.getElementById('exam-select').value;
+    if (!cat) {
+      document.getElementById('info-duration').innerText = "0";
+      document.getElementById('info-count').innerText = "0";
+      return;
+    }
+    const count = db.questions.filter(q => q.category === cat).length;
+    document.getElementById('info-duration').innerText = db.settings[cat]?.duration || 15;
+    document.getElementById('info-count').innerText = count;
+  }
+
+  function showHome() {
+    examActive = false;
+    document.getElementById('main-header').classList.remove('hidden');
+    document.getElementById('btn-admin-panel').classList.remove('hidden');
+    document.getElementById('btn-back-home').classList.add('hidden');
+
+    document.getElementById('home-screen').classList.remove('hidden');
+    document.getElementById('exam-screen').classList.add('hidden');
+    document.getElementById('result-screen').classList.add('hidden');
+    document.getElementById('admin-login-screen').classList.add('hidden');
+    document.getElementById('admin-dashboard').classList.add('hidden');
+    populateDropdowns();
+  }
+
+  function showAdminLogin() {
+    document.getElementById('home-screen').classList.add('hidden');
+    document.getElementById('exam-screen').classList.add('hidden');
+    document.getElementById('result-screen').classList.add('hidden');
+    document.getElementById('admin-login-screen').classList.remove('hidden');
+    document.getElementById('btn-admin-panel').classList.add('hidden');
+    document.getElementById('btn-back-home').classList.remove('hidden');
+  }
+
+  function loginAdmin() {
+    const p = document.getElementById('admin-pass').value.trim();
+    if (!db.adminPassword) {
+      db.adminPassword = 'admin123';
+      saveDb();
+    }
+    if (p === db.adminPassword) {
+      document.getElementById('admin-pass').value = '';
+      document.getElementById('admin-login-screen').classList.add('hidden');
+      document.getElementById('admin-dashboard').classList.remove('hidden');
+      populateDropdowns();
+      renderCategoryChips();
+      renderAdminList();
+    } else {
+      alert('Incorrect passcode. Default is "admin123".');
+    }
+  }
+
+  function changeAdminPassword() {
+    const oldP = document.getElementById('old-pass').value.trim();
+    const newP = document.getElementById('new-pass').value.trim();
+
+    if (oldP !== db.adminPassword) return alert('Current password is incorrect.');
+    if (!newP || newP.length < 4) return alert('New password must be at least 4 characters long.');
+
+    db.adminPassword = newP;
+    saveDb();
+    document.getElementById('old-pass').value = '';
+    document.getElementById('new-pass').value = '';
+    alert('Password updated successfully!');
+  }
+
+  function saveDuration() {
+    const cat = document.getElementById('config-category').value;
+    const d = parseInt(document.getElementById('new-duration').value);
+    if (!d || d < 1) return alert('Enter a valid duration');
+    if (!db.settings[cat]) db.settings[cat] = {};
+    db.settings[cat].duration = d;
+    saveDb();
+    renderExamDetails();
+    alert(`Duration for ${cat} set to ${d} minutes.`);
+  }
+
+  function addQuestion() {
+    const prompt = document.getElementById('new-question').value.trim();
+    const a = document.getElementById('opt-a').value.trim();
+    const b = document.getElementById('opt-b').value.trim();
+    const c = document.getElementById('opt-c').value.trim();
+    const d = document.getElementById('opt-d').value.trim();
+    const correct = parseInt(document.getElementById('correct-opt').value);
+    const cat = document.getElementById('question-category').value;
+
+    if (!prompt || !a || !b || !c || !d) return alert('Please fill in all options and question prompt.');
+
+    db.questions.push({
+      id: Date.now(),
+      category: cat,
+      prompt,
+      options: [a, b, c, d],
+      correct
+    });
+
+    saveDb();
+    alert('Question added successfully!');
+    document.getElementById('new-question').value = '';
+    document.getElementById('opt-a').value = '';
+    document.getElementById('opt-b').value = '';
+    document.getElementById('opt-c').value = '';
+    document.getElementById('opt-d').value = '';
+    renderAdminList();
+    renderExamDetails();
+  }
+
+  function deleteQuestion(id) {
+    db.questions = db.questions.filter(q => q.id !== id);
+    saveDb();
+    renderAdminList();
+    renderExamDetails();
+  }
+
+  function renderAdminList() {
+    const list = document.getElementById('admin-questions-list');
+    list.innerHTML = '';
+    if (db.questions.length === 0) {
+      list.innerHTML = '<p style="color:#64748b;">No questions available.</p>';
+      return;
+    }
+    db.questions.forEach((q, idx) => {
+      list.innerHTML += `
+        <div class="question-block">
+          <p><strong>#${idx + 1} [${q.category}]</strong> ${q.prompt}</p>
+          <small style="color:#16a34a;">Correct: Option ${String.fromCharCode(65 + q.correct)} (${q.options[q.correct]})</small><br>
+          <button cla

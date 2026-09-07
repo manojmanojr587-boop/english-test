@@ -1,7 +1,7 @@
 {
   "name": "Exam Assessment Portal",
   "short_name": "ExamPortal",
-  "start_url": "./index.html",
+  "start_url": "./test2.html",
   "display": "fullscreen",
   "orientation": "portrait",
   "background_color": "#1e3a8a",

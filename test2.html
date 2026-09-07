@@ -244,16 +244,48 @@
       }
     ]
   };
+// 1. Paste your keys from Firebase Console here:
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    databaseURL: "YOUR_DATABASE_URL",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
 
-  let db = null;
-  try {
-    db = JSON.parse(localStorage.getItem('portal_db_master'));
-  } catch (e) {
-    db = null;
+  // 2. Initialize Firebase
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+  const rtdb = firebase.database();
+  const dbRef = rtdb.ref("examPortalData");
+
+  let db = DEFAULT_STATE;
+
+  // 3. Central cloud save function
+  function persist() {
+    dbRef.set(db);
   }
 
-  if (!db || typeof db !== 'object') {
-    db = DEFAULT_STATE;
+  // 4. Live sync across all phones & browsers
+  dbRef.on("value", (snapshot) => {
+    const cloudData = snapshot.val();
+    if (cloudData) {
+      db = cloudData;
+    } else {
+      db = DEFAULT_STATE;
+      persist();
+    }
+    
+    if (!document.getElementById('home-screen').classList.contains('hidden')) {
+      refreshUI();
+    }
+    if (!document.getElementById('admin-dashboard-screen').classList.contains('hidden')) {
+      refreshAdminUI();
+    }
+  });
   }
   if (!db.adminPassword) db.adminPassword = "admin123";
   if (!Array.isArray(db.categories)) db.categories = DEFAULT_STATE.categories;

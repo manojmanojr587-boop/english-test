@@ -2,12 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Examination Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Examination & Assessment Portal</title>
+
+  <!-- PWA & Mobile Translucent Settings -->
   <link rel="manifest" href="manifest.json" />
-<meta name="theme-color" content="#1e3a8a" />
-<meta name="mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#1e3a8a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <!-- Firebase Compat Libraries for Cloud Sync -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <!-- PDF & Excel Document Generation Engines -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
   <style>
     :root {
       --primary: #1e3a8a;
@@ -17,6 +28,7 @@
       --text: #1e293b;
       --danger: #dc2626;
       --success: #16a34a;
+      --excel: #0d9488;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     body { background-color: var(--bg); color: var(--text); padding: 20px; }
@@ -29,6 +41,7 @@
     .btn-secondary { background: #64748b; }
     .btn-danger { background: var(--danger); }
     .btn-success { background: var(--success); }
+    .btn-excel { background: var(--excel); }
     input, select, textarea { width: 100%; padding: 10px; margin: 8px 0 16px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; }
     .password-field { position: relative; margin-bottom: 16px; }
     .password-field input { margin: 8px 0 0 0; padding-right: 46px; }
@@ -40,7 +53,7 @@
     .option-label input { width: auto; margin-right: 10px; margin-top: 0; }
     .category-chip { display: inline-flex; align-items: center; background: #e0f2fe; color: #0369a1; padding: 6px 12px; border-radius: 20px; margin: 4px; font-size: 0.9rem; }
     .category-chip button { background: none; border: none; margin-left: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
-    .toggle-btn { padding: 3px 8px; border-radius: 4px; color: white !important; font-size: 0.75rem !important; }
+    .toggle-btn { padding: 3px 8px; border-radius: 4px; color: white !important; font-size: 0.75rem !important; border: none; cursor: pointer; }
     .toggle-on { background-color: var(--success) !important; }
     .toggle-off { background-color: var(--danger) !important; }
     .hidden { display: none !important; }
@@ -49,6 +62,7 @@
 <body>
 
 <div class="container">
+  <!-- Master Header -->
   <header id="main-header">
     <div>
       <h1 id="portal-title">Exam Assessment Center</h1>
@@ -60,9 +74,9 @@
     </div>
   </header>
 
-  <!-- 1. Student Portal Screen -->
+  <!-- 1. Student Registration & Selection Screen -->
   <div id="home-screen" class="card">
-    <h2 style="margin-bottom: 15px;">Student Exam Entry</h2>
+    <h2 style="margin-bottom: 15px;">Student Registration</h2>
     
     <label>Student Full Name:</label>
     <input type="text" id="student-name" placeholder="Enter your full name">
@@ -70,7 +84,7 @@
     <label>Grade / Class:</label>
     <input type="text" id="student-grade" placeholder="e.g. Grade 10, Class B, B2 Level">
 
-    <label>Select Examination:</label>
+    <label>Select Examination Category:</label>
     <select id="exam-select" onchange="updateExamDetails()"></select>
 
     <div id="exam-info" style="margin-bottom: 20px;">
@@ -99,16 +113,18 @@
     </div>
   </div>
 
-  <!-- 3. Result Screen -->
+  <!-- 3. Result & Download Screen -->
   <div id="result-screen" class="card hidden" style="text-align: center;">
-    <h2>Examination Finished</h2>
+    <h2>Examination Completed</h2>
     <div style="margin: 20px 0;">
       <p style="font-size: 1.15rem;"><strong>Student Name:</strong> <span id="res-name"></span></p>
       <p style="font-size: 1.15rem; margin-top: 6px;"><strong>Grade / Class:</strong> <span id="res-grade"></span></p>
-      <p style="font-size: 1.4rem; margin-top: 15px; color: var(--primary);"><strong>Score:</strong> <span id="res-score"></span></p>
+      <p style="font-size: 1.4rem; margin-top: 15px; color: var(--primary);"><strong>Final Score:</strong> <span id="res-score"></span></p>
     </div>
+    
     <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-      <button type="button" class="btn btn-success" onclick="downloadResultReport()">Download Report (.txt)</button>
+      <button type="button" class="btn btn-success" onclick="downloadPDFReport()">Download PDF</button>
+      <button type="button" class="btn btn-excel" onclick="downloadExcelReport()">Download MS Excel (.xlsx)</button>
       <button type="button" class="btn btn-secondary" onclick="showScreen('home')">Return to Portal</button>
     </div>
   </div>
@@ -116,7 +132,7 @@
   <!-- 4. Admin Login Screen -->
   <div id="admin-login-screen" class="card hidden">
     <h2>Admin Authentication</h2>
-    <p style="margin-bottom: 10px; color: #64748b;">Authorized teacher/evaluator access only.</p>
+    <p style="margin-bottom: 10px; color: #64748b;">Instructor access restricted by passcode.</p>
     
     <label>Admin Passcode:</label>
     <div class="password-field">
@@ -127,12 +143,12 @@
     <button type="button" class="btn" onclick="handleLogin()">Login</button>
   </div>
 
-  <!-- 5. Admin Dashboard Screen -->
+  <!-- 5. Admin Dashboard -->
   <div id="admin-dashboard-screen" class="hidden">
     <!-- Security Box -->
     <div class="card" style="border-left: 4px solid var(--primary);">
       <h3>Admin Security Settings</h3>
-      <p style="color: #64748b; margin-bottom: 10px;">Update admin credentials below.</p>
+      <p style="color: #64748b; margin-bottom: 10px;">Update credentials synced across all devices.</p>
       
       <label>Current Password:</label>
       <div class="password-field">
@@ -142,48 +158,48 @@
       
       <label>New Password:</label>
       <div class="password-field">
-        <input type="password" id="new-pass" placeholder="Enter new password (min 4 chars)">
+        <input type="password" id="new-pass" placeholder="Enter new password (min 4 characters)">
         <button type="button" class="toggle-password" onclick="toggleEye('new-pass', this)">👁️</button>
       </div>
       
-      <button type="button" class="btn" onclick="updatePassword()">Save New Password</button>
+      <button type="button" class="btn" onclick="updatePassword()">Update Passcode</button>
     </div>
 
-    <!-- Category Manager with ON/OFF -->
+    <!-- Category Manager with Visibility Toggles -->
     <div class="card" style="border-left: 4px solid var(--secondary);">
       <h3>Manage Categories & Student Visibility</h3>
-      <p style="color: #64748b; margin-bottom: 10px;">Toggle ON to show on the student portal, or OFF to hide.</p>
+      <p style="color: #64748b; margin-bottom: 10px;">Turn categories ON or OFF to control availability in the student panel.</p>
 
       <div style="display: flex; gap: 8px;">
-        <input type="text" id="custom-cat-input" placeholder="Enter category name (e.g. CEFR B2, Midterm)" style="margin-bottom: 0;">
-        <button type="button" class="btn" onclick="addCategory()" style="white-space: nowrap;">Add</button>
+        <input type="text" id="custom-cat-input" placeholder="Enter custom category name (e.g., CEFR, IELTS, Grammar)" style="margin-bottom: 0;">
+        <button type="button" class="btn" onclick="addCategory()" style="white-space: nowrap;">Add Category</button>
       </div>
 
       <div style="margin-top: 15px;">
-        <label>Active Categories List:</label>
+        <label>Active Categories Control:</label>
         <div id="category-chips-wrapper" style="margin-top: 5px;"></div>
       </div>
     </div>
 
-    <!-- Test Settings & Question Management -->
+    <!-- Duration & Question Bank Management -->
     <div class="card">
-      <h2>Configure Durations & Question Banks</h2>
+      <h2>Configure Durations & Questions</h2>
       
       <label>Select Category:</label>
       <select id="config-cat-select" onchange="syncDurationInput()"></select>
 
-      <label>Duration (in minutes):</label>
-      <input type="number" id="cat-duration" min="1" placeholder="Duration in minutes">
+      <label>Exam Duration (Minutes):</label>
+      <input type="number" id="cat-duration" min="1" placeholder="e.g. 20">
 
       <button type="button" class="btn" style="margin-bottom: 20px;" onclick="saveDuration()">Save Duration</button>
 
       <hr style="margin: 20px 0;">
 
-      <h3>Add a Question</h3>
-      <label>Target Category:</label>
+      <h3>Add Question to Category</h3>
+      <label>Category for this Question:</label>
       <select id="target-cat-select"></select>
 
-      <label>Question Prompt:</label>
+      <label>Question Prompt / Text:</label>
       <textarea id="q-prompt" rows="3" placeholder="Enter question text here..."></textarea>
 
       <label>Option A:</label>
@@ -198,7 +214,7 @@
       <label>Option D:</label>
       <input type="text" id="opt-d" placeholder="Option D text">
 
-      <label>Select Correct Option:</label>
+      <label>Correct Answer:</label>
       <select id="q-correct">
         <option value="0">Option A</option>
         <option value="1">Option B</option>
@@ -210,7 +226,7 @@
     </div>
 
     <div class="card">
-      <h3>Current Question Database</h3>
+      <h3>Active Question Bank</h3>
       <div id="questions-list-wrapper" style="margin-top: 15px;"></div>
     </div>
   </div>
@@ -244,7 +260,8 @@
       }
     ]
   };
-// 1. Paste your keys from Firebase Console here:
+
+  // --- 1. FIREBASE CONFIGURATION (Paste your project keys here) ---
   const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -255,47 +272,49 @@
     appId: "YOUR_APP_ID"
   };
 
-  // 2. Initialize Firebase
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-  }
-  const rtdb = firebase.database();
-  const dbRef = rtdb.ref("examPortalData");
-
   let db = DEFAULT_STATE;
+  let isFirebaseReady = false;
+  let dbRef = null;
 
-  // 3. Central cloud save function
-  function persist() {
-    dbRef.set(db);
-  }
+  try {
+    if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      const rtdb = firebase.database();
+      dbRef = rtdb.ref("examPortalData");
+      isFirebaseReady = true;
 
-  // 4. Live sync across all phones & browsers
-  dbRef.on("value", (snapshot) => {
-    const cloudData = snapshot.val();
-    if (cloudData) {
-      db = cloudData;
+      // Realtime listener for cross-device synchronization
+      dbRef.on("value", (snapshot) => {
+        const cloudData = snapshot.val();
+        if (cloudData) {
+          db = cloudData;
+        } else {
+          db = DEFAULT_STATE;
+          persist();
+        }
+        refreshCurrentViews();
+      });
     } else {
-      db = DEFAULT_STATE;
-      persist();
+      // Offline / Local fallback if Firebase keys are not yet inserted
+      const local = localStorage.getItem('portal_db_master');
+      if (local) db = JSON.parse(local);
     }
-    
-    if (!document.getElementById('home-screen').classList.contains('hidden')) {
-      refreshUI();
-    }
-    if (!document.getElementById('admin-dashboard-screen').classList.contains('hidden')) {
-      refreshAdminUI();
-    }
-  });
+  } catch (err) {
+    console.warn("Database init fallback to local:", err);
   }
-  if (!db.adminPassword) db.adminPassword = "admin123";
-  if (!Array.isArray(db.categories)) db.categories = DEFAULT_STATE.categories;
-  if (!db.settings) db.settings = DEFAULT_STATE.settings;
-  if (!Array.isArray(db.questions)) db.questions = DEFAULT_STATE.questions;
 
   function persist() {
-    localStorage.setItem('portal_db_master', JSON.stringify(db));
+    if (isFirebaseReady && dbRef) {
+      dbRef.set(db);
+    } else {
+      localStorage.setItem('portal_db_master', JSON.stringify(db));
+    }
   }
-  persist();
+
+  function refreshCurrentViews() {
+    if (!document.getElementById('home-screen').classList.contains('hidden')) refreshUI();
+    if (!document.getElementById('admin-dashboard-screen').classList.contains('hidden')) refreshAdminUI();
+  }
 
   let timerTimer = null;
   let timeRemaining = 0;
@@ -348,7 +367,7 @@
     const sel = document.getElementById('exam-select');
     const prev = sel.value;
     sel.innerHTML = '';
-    const visible = db.categories.filter(c => c.enabled);
+    const visible = (db.categories || []).filter(c => c.enabled);
     visible.forEach(c => {
       sel.innerHTML += `<option value="${c.name}">${c.name}</option>`;
     });
@@ -366,8 +385,8 @@
       document.getElementById('info-count').innerText = "0";
       return;
     }
-    const count = db.questions.filter(q => q.category === cat).length;
-    const dur = db.settings[cat]?.duration || 15;
+    const count = (db.questions || []).filter(q => q.category === cat).length;
+    const dur = db.settings?.[cat]?.duration || 15;
     document.getElementById('info-duration').innerText = dur;
     document.getElementById('info-count').innerText = count;
   }
@@ -381,7 +400,7 @@
     confSel.innerHTML = '';
     targetSel.innerHTML = '';
 
-    db.categories.forEach(c => {
+    (db.categories || []).forEach(c => {
       confSel.innerHTML += `<option value="${c.name}">${c.name}</option>`;
       targetSel.innerHTML += `<option value="${c.name}">${c.name}</option>`;
     });
@@ -397,7 +416,7 @@
   function renderCategoryChips() {
     const wrap = document.getElementById('category-chips-wrapper');
     wrap.innerHTML = '';
-    db.categories.forEach(c => {
+    (db.categories || []).forEach(c => {
       wrap.innerHTML += `
         <span class="category-chip">
           <strong>${c.name}</strong>
@@ -428,6 +447,7 @@
       return alert('Category already exists');
     }
     db.categories.push({ name, enabled: true });
+    if (!db.settings) db.settings = {};
     if (!db.settings[name]) db.settings[name] = { duration: 15 };
     persist();
     input.value = '';
@@ -435,23 +455,24 @@
   }
 
   function removeCategory(name) {
-    if (db.categories.length <= 1) return alert('You must keep at least one category.');
-    if (!confirm(`Delete category "${name}"?`)) return;
+    if (db.categories.length <= 1) return alert('You must retain at least one category.');
+    if (!confirm(`Delete category "${name}"? Questions will remain in database.`)) return;
     db.categories = db.categories.filter(c => c.name !== name);
-    delete db.settings[name];
+    if (db.settings) delete db.settings[name];
     persist();
     refreshAdminUI();
   }
 
   function syncDurationInput() {
     const cat = document.getElementById('config-cat-select').value;
-    document.getElementById('cat-duration').value = db.settings[cat]?.duration || 15;
+    document.getElementById('cat-duration').value = db.settings?.[cat]?.duration || 15;
   }
 
   function saveDuration() {
     const cat = document.getElementById('config-cat-select').value;
     const dur = parseInt(document.getElementById('cat-duration').value);
-    if (!dur || dur < 1) return alert('Enter a valid duration');
+    if (!dur || dur < 1) return alert('Enter a valid duration in minutes.');
+    if (!db.settings) db.settings = {};
     if (!db.settings[cat]) db.settings[cat] = {};
     db.settings[cat].duration = dur;
     persist();
@@ -467,10 +488,9 @@
     const d = document.getElementById('opt-d').value.trim();
     const correct = parseInt(document.getElementById('q-correct').value);
 
-    if (!prompt || !a || !b || !c || !d) {
-      return alert('Fill in the prompt and all four options.');
-    }
+    if (!prompt || !a || !b || !c || !d) return alert('Please enter question prompt and all four options.');
 
+    if (!db.questions) db.questions = [];
     db.questions.push({
       id: Date.now(),
       category: cat,
@@ -479,7 +499,7 @@
       correct
     });
     persist();
-    alert('Question added.');
+    alert('Question added successfully.');
     document.getElementById('q-prompt').value = '';
     document.getElementById('opt-a').value = '';
     document.getElementById('opt-b').value = '';
@@ -497,7 +517,7 @@
   function renderQuestionsList() {
     const wrap = document.getElementById('questions-list-wrapper');
     wrap.innerHTML = '';
-    if (!db.questions.length) {
+    if (!db.questions || !db.questions.length) {
       wrap.innerHTML = '<p style="color:#64748b;">No questions registered.</p>';
       return;
     }
@@ -514,7 +534,7 @@
 
   function handleLogin() {
     const pass = document.getElementById('admin-pass').value.trim();
-    if (pass === db.adminPassword) {
+    if (pass === (db.adminPassword || "admin123")) {
       document.getElementById('admin-pass').value = '';
       showScreen('admin-dash');
     } else {
@@ -526,12 +546,12 @@
     const oldP = document.getElementById('old-pass').value.trim();
     const newP = document.getElementById('new-pass').value.trim();
     if (oldP !== db.adminPassword) return alert('Current password does not match.');
-    if (!newP || newP.length < 4) return alert('Password must be at least 4 characters long.');
+    if (!newP || newP.length < 4) return alert('New password must be at least 4 characters long.');
     db.adminPassword = newP;
     persist();
     document.getElementById('old-pass').value = '';
     document.getElementById('new-pass').value = '';
-    alert('Password updated.');
+    alert('Admin password updated successfully.');
   }
 
   function startExam() {
@@ -539,14 +559,12 @@
     const grade = document.getElementById('student-grade').value.trim();
     const cat = document.getElementById('exam-select').value;
 
-    if (!name) return alert('Enter your Full Name.');
-    if (!grade) return alert('Enter your Grade / Class.');
-    if (!cat) return alert('No valid exam category selected.');
+    if (!name) return alert('Please enter your Full Name.');
+    if (!grade) return alert('Please enter your Grade / Class.');
+    if (!cat) return alert('Please select an active examination category.');
 
-    currentQuestions = db.questions.filter(q => q.category === cat);
-    if (!currentQuestions.length) {
-      return alert('No questions available in this category.');
-    }
+    currentQuestions = (db.questions || []).filter(q => q.category === cat);
+    if (!currentQuestions.length) return alert('No questions available in this category.');
 
     studentData = { name, grade, category: cat, score: "", records: [] };
 
@@ -578,7 +596,7 @@
     });
 
     testActive = true;
-    timeRemaining = (db.settings[cat]?.duration || 15) * 60;
+    timeRemaining = (db.settings?.[cat]?.duration || 15) * 60;
     runTimer();
   }
 
@@ -590,7 +608,7 @@
       updateTimerText();
       if (timeRemaining <= 0) {
         clearInterval(timerTimer);
-        alert('Time elapsed. Submitting test.');
+        alert('Time elapsed! Auto-submitting answers.');
         submitExam(true);
       }
     }, 1000);
@@ -638,45 +656,110 @@
     showScreen('results');
   }
 
-  function downloadResultReport() {
-    let out = `=================================================\n`;
-    out += `         OFFICIAL EXAMINATION REPORT             \n`;
-    out += `=================================================\n\n`;
-    out += `Student Name   : ${studentData.name}\n`;
-    out += `Grade / Class  : ${studentData.grade}\n`;
-    out += `Exam Category  : ${studentData.category}\n`;
-    out += `Final Score    : ${studentData.score}\n`;
-    out += `Date / Time    : ${new Date().toLocaleString()}\n\n`;
-    out += `-------------------------------------------------\n`;
-    out += `               QUESTION BREAKDOWN                \n`;
-    out += `-------------------------------------------------\n\n`;
+  // --- PDF REPORT EXPORT (jsPDF) ---
+  function downloadPDFReport() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const margin = 15;
+    let y = 20;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("OFFICIAL EXAMINATION REPORT", margin, y);
+    y += 10;
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Student Name   : ${studentData.name}`, margin, y); y += 6;
+    doc.text(`Grade / Class  : ${studentData.grade}`, margin, y); y += 6;
+    doc.text(`Exam Category  : ${studentData.category}`, margin, y); y += 6;
+    doc.text(`Final Score    : ${studentData.score}`, margin, y); y += 6;
+    doc.text(`Date / Time    : ${new Date().toLocaleString()}`, margin, y); y += 10;
+
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, y, 195, y);
+    y += 8;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("ANSWERS EVALUATION BREAKDOWN", margin, y);
+    y += 8;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
 
     studentData.records.forEach((r, idx) => {
-      out += `Q${idx + 1}: ${r.prompt}\n`;
-      const yourAns = r.selected !== -1
-        ? `${String.fromCharCode(65 + r.selected)}. ${r.options[r.selected]}`
-        : 'No Answer Provided';
+      if (y > 265) {
+        doc.addPage();
+        y = 20;
+      }
+
+      const promptLines = doc.splitTextToSize(`Q${idx + 1}: ${r.prompt}`, 180);
+      doc.text(promptLines, margin, y);
+      y += promptLines.length * 5;
+
+      const yourAns = r.selected !== -1 
+        ? `${String.fromCharCode(65 + r.selected)}. ${r.options[r.selected]}` 
+        : "No Answer Provided";
       const rightAns = `${String.fromCharCode(65 + r.correct)}. ${r.options[r.correct]}`;
 
       if (r.isRight) {
-        out += `Your Answer   : [CORRECT] ${yourAns}\n`;
+        doc.setTextColor(22, 163, 74);
+        doc.text(`Your Answer: [CORRECT] ${yourAns}`, margin + 5, y);
+        y += 7;
       } else {
-        out += `Your Answer   : [WRONG] ${yourAns}  --->  [CORRECT ANSWER]: ${rightAns}\n`;
+        doc.setTextColor(220, 38, 38);
+        doc.text(`Your Answer: [WRONG] ${yourAns}`, margin + 5, y);
+        y += 5;
+        doc.setTextColor(22, 163, 74);
+        doc.text(`Correct Answer: ${rightAns}`, margin + 5, y);
+        y += 7;
       }
-      out += `\n`;
+      doc.setTextColor(30, 41, 59);
     });
 
-    out += `=================================================\n`;
-    out += `                 END OF REPORT                   \n`;
-    out += `=================================================\n`;
+    const filename = `${studentData.name.replace(/\s+/g, '_')}_${studentData.category}_Report.pdf`;
+    doc.save(filename);
+  }
 
-    const blob = new Blob([out], { type: 'text/plain;charset=utf-8' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${studentData.name.replace(/\s+/g, '_')}_${studentData.category}_Report.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // --- EXCEL REPORT EXPORT (SheetJS) ---
+  function downloadExcelReport() {
+    const wb = XLSX.utils.book_new();
+
+    const summaryData = [
+      ["EXAM REPORT SUMMARY", ""],
+      ["Student Name", studentData.name],
+      ["Grade / Class", studentData.grade],
+      ["Exam Category", studentData.category],
+      ["Final Score", studentData.score],
+      ["Date / Time", new Date().toLocaleString()]
+    ];
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+
+    const answerData = [
+      ["Q#", "Question Prompt", "Your Answer", "Evaluation", "Correct Answer (if wrong)"]
+    ];
+
+    studentData.records.forEach((r, idx) => {
+      const yourAns = r.selected !== -1
+        ? `${String.fromCharCode(65 + r.selected)}. ${r.options[r.selected]}`
+        : "No Answer Provided";
+      const rightAns = `${String.fromCharCode(65 + r.correct)}. ${r.options[r.correct]}`;
+
+      answerData.push([
+        idx + 1,
+        r.prompt,
+        yourAns,
+        r.isRight ? "CORRECT" : "WRONG",
+        r.isRight ? "-" : rightAns
+      ]);
+    });
+
+    const wsAnswers = XLSX.utils.aoa_to_sheet(answerData);
+    XLSX.utils.book_append_sheet(wb, wsAnswers, "Answers Breakdown");
+
+    const filename = `${studentData.name.replace(/\s+/g, '_')}_${studentData.category}_Report.xlsx`;
+    XLSX.writeFile(wb, filename);
   }
 
   window.addEventListener('beforeunload', (e) => {
@@ -688,10 +771,11 @@
 
   window.addEventListener('blur', () => {
     if (testActive) {
-      alert('Warning: Leaving the active exam tab is not permitted.');
+      alert('Warning: Switching apps or browser tabs is prohibited during testing.');
     }
   });
 
+  // Startup initialization
   showScreen('home');
 </script>
 </body>
